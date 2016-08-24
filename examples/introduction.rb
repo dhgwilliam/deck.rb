@@ -3,10 +3,9 @@ here = File.expand_path(File.dirname(__FILE__))
 require "#{here}/deck"
 
 class Introduction < Deck
-
-  needs :title => "Getting Started with deck.js",
-    :description => "A jQuery library for modern HTML presentations",
-    :author => "Caleb Troughton"
+  needs :title => 'Getting Started with deck.js',
+    :description => 'A jQuery library for modern HTML presentations',
+    :author => 'Caleb Troughton'
 
   def head_content
     super

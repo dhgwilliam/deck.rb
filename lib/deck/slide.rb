@@ -3,140 +3,144 @@ require 'redcarpet'
 require 'deck/noko'
 
 module Deck
- class Slide < Erector::Widget
+  class Slide < Erector::Widget
+    include Deck::Noko
 
-  include Deck::Noko
-
-  # todo: test this method on its own
-  def self.from_file markdown_file
-    markdown_file = markdown_file.path if markdown_file.is_a? File   # fix for Ruby 1.8.7
-    split File.read(markdown_file)
-  end
-
-  # given a chunk of Markdown text, splits it into an array of Slide objects
-  # todo: move into SlideDeck?
-  def self.split content
-    unless content =~ /^\<?!SLIDE/m     # this only applies to files with no !SLIDEs at all, which is odd
-      content = content.
-        gsub(/^# /m, "<!SLIDE>\n# ").
-        gsub(/^(.*)\n(===+)/, "<!SLIDE>\n\\1\n\\2")
+    # TODO: test this method on its own
+    def self.from_file(markdown_file)
+      # fix for Ruby 1.8.7
+      markdown_file = markdown_file.path if markdown_file.is_a?(File)
+      split File.read(markdown_file)
     end
 
-    lines = content.split("\n")
-    slides = []
-    slides << (slide = Slide.new)
-    until lines.empty?
-      line = lines.shift
-      if line =~ /^<?!SLIDE(.*)>?/
-        slides << (slide = Slide.new(:classes => $1))
+    def self.handle_no_slides(content)
+      content
+        .gsub(/^# /m, "<!SLIDE>\n# ")
+        .gsub(/^(.*)\n(===+)/, "<!SLIDE>\n\\1\n\\2")
+    end
 
-      elsif (line =~ /^# / or lines.first =~ /^(===+)/) and !slide.empty?
-        # every H1 defines a new slide, unless there's a !SLIDE before it
-        slides << (slide = Slide.new)
-        slide << line
+    # given a chunk of Markdown text, splits it into an array of Slide objects
+    # TODO: move into SlideDeck?
+    def self.split(content)
+      content = handle_no_slides(content) unless content =~ /^\<?!SLIDE/m
 
-      elsif line =~ /^\.notes/
-        # don't include notes
+      lines = content.split("\n")
+      slides = []
+      slides << (slide = Slide.new)
 
-      else
-        slide << line
+      until lines.empty?
+        line = lines.shift
+        if line =~ /^<?!SLIDE(.*)>?/
+          slides << (slide = Slide.new(:classes => $1))
+
+        elsif (line =~ /^# / || lines.first =~ /^(===+)/) && !slide.empty?
+          # every H1 defines a new slide, unless there's a !SLIDE before it
+          slides << (slide = Slide.new)
+          slide << line
+
+        elsif line =~ /^\.notes/
+          # don't include notes
+
+        else
+          slide << line
+        end
+      end
+
+      slides.delete_if(&:empty?)
+    end
+
+    ####
+
+    attr_reader :classes, :markdown_text
+
+    needs :classes => nil, :slide_id => nil
+    needs :markdown_text => nil
+
+    def initialize(options = {})
+      super options
+
+      @classes = process_classes
+      @markdown_text = ''
+    end
+
+    def ==(other)
+      Slide === other &&
+        @classes == other.classes &&
+        @markdown_text == other.markdown_text
+    end
+
+    def process_classes
+      ['slide'] + case @classes
+                  when NilClass
+                    []
+                  when String
+                    @classes.strip.chomp('>').split
+                  when Array
+                    @classes
+                  else
+                    raise "can't deal with :classes => #{@classes.inspect}"
+                  end
+    end
+
+    def markdown
+      @@markdown ||= Redcarpet::Markdown.new(
+        Redcarpet::Render::HTML,
+        :no_intra_emphasis => true,
+        :tables => true,
+        :fenced_code_blocks => true,
+        :autolink => true,
+        :strikethrough => true,
+        :lax_html_blocks => false,
+        :space_after_headers => true,
+        :superscript => false
+      )
+    end
+
+    def <<(s)
+      if s.strip =~ /^\s*<?!VIDEO +([^\s>]*)>?$/
+        youtube_id = $1
+        # see https://developers.google.com/youtube/player_parameters
+        s = %Q(<iframe class="video youtube" type="text/html" width="640" height="390" src="http://www.youtube.com/embed/#{youtube_id}" frameborder="0"></iframe>\n)
+      end
+      @markdown_text << s
+      @markdown_text << "\n"
+    end
+
+    def empty?
+      @markdown_text.strip == ''
+    end
+
+    def title
+      lines = @markdown_text.strip.split("\n")
+      raise 'an empty slide has no id' if lines.empty?
+      lines.first.gsub(/^[#=]*/, '').strip
+    end
+
+    def slide_id
+      @slide_id ||=
+        begin
+          title.downcase.gsub(/[^\w\s]/, '').strip.gsub(/\s/, '_')
+        end
+    end
+
+    def content
+      section :class => @classes, :id => slide_id do
+        # markdown HTML should be left-aligned, in case of PRE blocks and
+        # other quirks
+        text "\n"
+        html = markdown.render(markdown_text)
+        html = munge(html)
+        rawtext html
       end
     end
 
-    slides.delete_if {|slide| slide.empty? }
-
-    slides
-  end
-
-  ####
-
-  attr_reader :classes, :markdown_text
-
-  needs :classes => nil, :slide_id => nil
-  needs :markdown_text => nil
-
-  def initialize options = {}
-    super options
-
-    @classes = process_classes
-    @markdown_text = ""
-  end
-
-  def ==(other)
-    Slide === other and
-    @classes == other.classes and
-    @markdown_text == other.markdown_text
-  end
-
-  def process_classes
-    ["slide"] + case @classes
-    when NilClass
-      []
-    when String
-      @classes.strip.chomp('>').split
-    when Array
-      @classes
-    else
-      raise "can't deal with :classes => #{@classes.inspect}"
-    end
-  end
-
-  def markdown
-    @@markdown ||= Redcarpet::Markdown.new(Redcarpet::Render::HTML,
-      :no_intra_emphasis => true,
-      :tables => true,
-      :fenced_code_blocks => true,
-      :no_intra_emphasis => true,
-      :autolink => true,
-      :strikethrough => true,
-      :lax_html_blocks => false,
-      :space_after_headers => true,
-      :superscript => false
-    )
-  end
-
-  def <<(s)
-    if s.strip =~ /^\s*<?!VIDEO +([^\s>]*)>?$/
-      youtube_id = $1
-      # see https://developers.google.com/youtube/player_parameters
-      s = %Q(<iframe class="video youtube" type="text/html" width="640" height="390" src="http://www.youtube.com/embed/#{youtube_id}" frameborder="0"></iframe>\n)
-    end
-    @markdown_text << s
-    @markdown_text << "\n"
-  end
-
-  def empty?
-    @markdown_text.strip == ""
-  end
-
-  def title
-    lines = @markdown_text.strip.split("\n")
-    raise "an empty slide has no id" if lines.empty?
-    lines.first.gsub(/^[#=]*/, '').strip
-  end
-
-  def slide_id
-    @slide_id ||= begin
-      title.downcase.gsub(/[^\w\s]/, '').strip.gsub(/\s/, '_')
-    end
-  end
-
-  def content
-    section :class => @classes, :id => slide_id do
-      text "\n" # markdown HTML should be left-aligned, in case of PRE blocks and other quirks
-      html = markdown.render(markdown_text)
-      html = munge(html)
-      rawtext html
-    end
-  end
-
-  private
+    private
 
     # if there is an H1, change it to an H2, unless it's the only thing there
     # TODO: or unless the slide class is whatever
-    def mutate_h1? doc
+    def mutate_h1?(doc)
       h1s = doc.css('h1') || []
-      if h1s.size == 0
+      if h1s.empty?
         false
       else
         stuff = doc.css('body>*')
@@ -148,15 +152,14 @@ module Deck
       end
     end
 
-    def munge html
+    def munge(html)
       doc = noko_doc(html)
       if mutate_h1? doc
-        doc.css('h1').each {|node| node.node_name = "h2"}
+        doc.css('h1').each { |node| node.node_name = 'h2' }
         doc.css('body').inner_html + "\n"
       else
         html
       end
     end
-
- end
+  end
 end

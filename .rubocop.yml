@@ -1,0 +1,8 @@
+---
+inherit_from: .rubocop_todo.yml
+
+Metrics/CyclomaticComplexity:
+  Max: 8
+
+Metrics/PerceivedComplexity:
+  Max: 9

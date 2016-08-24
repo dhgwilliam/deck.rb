@@ -7,36 +7,35 @@ module Deck
   class RackApp
     def self.app_root
       here = File.dirname(__FILE__)
-      app_root = File.expand_path "#{here}/../.."
+      File.expand_path "#{here}/../.."
     end
 
     def self.public_file_server
       Rack::File.new("#{app_root}/public")
     end
 
-    def self.build slide_files, options = {}
-      enable_thin_logging()
+    def self.build(slide_files, options = {})
+      enable_thin_logging
 
       Rack::Builder.app do
         use Rack::ShowExceptions
         use Rack::ShowStatus
-        use Rack::Codehighlighter, :coderay,
-          :element => "pre>code",
-          :markdown => true,
-          :pattern => /\A[:@]{3}\s?(\w+)\s*(\n|&#x000A;)/i
+        use Rack::Codehighlighter,
+            :coderay,
+            :element => 'pre>code',
+            :markdown => true,
+            :pattern => /\A[:@]{3}\s?(\w+)\s*(\n|&#x000A;)/i
         run ::Deck::RackApp.new(slide_files, options)
       end
     end
 
     def self.enable_thin_logging
       if const_defined?(:Thin)
-        if require "thin/logging"
-          Thin::Logging.debug = true
-        end
+        Thin::Logging.debug = true if require 'thin/logging'
       end
     end
 
-    def initialize slide_files, options = {}
+    def initialize(slide_files, options = {})
       @options = options
       @slide_files = [slide_files].flatten.map do |slide_file|
         case slide_file
@@ -76,17 +75,17 @@ module Deck
     end
 
     def extract_options(config)
-      ["style", "transition"].each do |key|
-        if config[key] and !@options[key.to_sym]
+      ['style', 'transition'].each do |key|
+        if config[key] && !@options[key.to_sym]
           @options[key.to_sym] = config[key]
         end
       end
     end
 
-    def call env
+    def call(env)
       request = Rack::Request.new(env)
-      if request.path == "/"
-        [200, {'Content-Type' => 'text/html'}, [deck.to_pretty]]
+      if request.path == '/'
+        [200, { 'Content-Type' => 'text/html' }, [deck.to_pretty]]
       else
         result = [404, {}, []]
         @file_servers.each do |file_server|
@@ -98,17 +97,18 @@ module Deck
     end
 
     def deck
-      SlideDeck.new({:slides => slides}.merge(@options))
+      SlideDeck.new({ :slides => slides }.merge(@options))
     end
 
     def slides
       out = []
       @slide_files.each do |file|
-        out += if file.is_a? Slide
-          [file]
-        else
-          Slide.from_file file
-        end
+        out +=
+          if file.is_a? Slide
+            [file]
+          else
+            Slide.from_file file
+          end
       end
       out
     end

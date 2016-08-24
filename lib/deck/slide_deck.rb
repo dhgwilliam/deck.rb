@@ -1,25 +1,18 @@
 require 'erector'
 require 'redcarpet'
 
-require "deck/slide"
+require 'deck/slide'
 
 module Deck
   class SlideDeck < Erector::Widgets::Page
-    needs :title => "deck.rb presentation",
+    needs :title => 'deck.rb presentation',
           :description => nil,
           :author => nil
-    needs :extensions => [
-        'goto',
-        'menu',
-        'navigation',
-        'status',
-        'hash',
-        'scale',
-    ]
+    needs :extensions => %w(goto menu navigation status hash scale)
     needs :slides => nil
 
-    needs :style => "swiss"
-    needs :transition => "horizontal-slide"
+    needs :style => 'swiss'
+    needs :transition => 'horizontal-slide'
 
     attr_reader :extensions
 
@@ -27,54 +20,54 @@ module Deck
       @title
     end
 
-    # todo: promote into Text
-    # todo: support numbers a la '&#1234;'
-    def entity entity_id
+    # TODO: promote into Text
+    # TODO: support numbers a la '&#1234;'
+    def entity(entity_id)
       raw("&#{entity_id};")
     end
 
-# left over from deck.js' introduction/index.html
+    # left over from deck.js' introduction/index.html
 
-# <!DOCTYPE html>
-# <!--[if lt IE 7]> <html class="no-js ie6" lang="en"> <![endif]-->
-# <!--[if IE 7]>    <html class="no-js ie7" lang="en"> <![endif]-->
-# <!--[if IE 8]>    <html class="no-js ie8" lang="en"> <![endif]-->
-# <!--[if gt IE 8]><!-->  <html class="no-js" lang="en"> <!--<![endif]-->
+    # <!DOCTYPE html>
+    # <!--[if lt IE 7]> <html class="no-js ie6" lang="en"> <![endif]-->
+    # <!--[if IE 7]>    <html class="no-js ie7" lang="en"> <![endif]-->
+    # <!--[if IE 8]>    <html class="no-js ie8" lang="en"> <![endif]-->
+    # <!--[if gt IE 8]><!-->  <html class="no-js" lang="en"> <!--<![endif]-->
 
-# todo: promote into Page
-    def stylesheet src, attributes = {}
-      link({:rel => "stylesheet", :href => src}.merge(attributes))
+    # TODO: promote into Page
+    def stylesheet(src, attributes = {})
+      link({ :rel => 'stylesheet', :href => src }.merge(attributes))
     end
 
-    def public_asset path
+    def public_asset(path)
       "/#{path}"
     end
 
     def head_content
       super
       meta 'charset' => 'utf-8'
-      meta 'http-equiv' => "X-UA-Compatible", 'content' => "IE=edge,chrome=1"
-      meta :name => "viewport", :content => "width=1024, user-scalable=no"
-      meta :name => "description", :content => @description if @description
-      meta :name => "author", :content => @author if @author
+      meta 'http-equiv' => 'X-UA-Compatible', 'content' => 'IE=edge,chrome=1'
+      meta :name => 'viewport', :content => 'width=1024, user-scalable=no'
+      meta :name => 'description', :content => @description if @description
+      meta :name => 'author', :content => @author if @author
 
       #  <!-- Core and extension CSS files -->
-      stylesheet public_asset("deck.js/core/deck.core.css")
+      stylesheet public_asset('deck.js/core/deck.core.css')
       extensions.each do |extension|
         stylesheet public_asset("deck.js/extensions/#{extension}/deck.#{extension}.css")
       end
 
       # <!-- Theme CSS files -->
-      stylesheet public_asset("deck.js/themes/style/#{@style}.css"), :id => "style-theme-link"
-      stylesheet public_asset("deck.js/themes/transition/#{@transition}.css"), :id => "transition-theme-link"
+      stylesheet public_asset("deck.js/themes/style/#{@style}.css"), :id => 'style-theme-link'
+      stylesheet public_asset("deck.js/themes/transition/#{@transition}.css"), :id => 'transition-theme-link'
 
-      stylesheet public_asset("coderay.css")
-      stylesheet public_asset("tables.css")
-      stylesheet public_asset("toc.css")
+      stylesheet public_asset('coderay.css')
+      stylesheet public_asset('tables.css')
+      stylesheet public_asset('toc.css')
     end
 
     def scripts
-      script :src => public_asset("deck.js/modernizr.custom.js")
+      script :src => public_asset('deck.js/modernizr.custom.js')
 
       # comment 'Grab CDN jQuery, with a protocol relative URL; fall back to local if offline'
       # script :src => '//ajax.aspnetcdn.com/ajax/jQuery/jquery-1.7.2.min.js'
@@ -87,19 +80,18 @@ module Deck
       JAVASCRIPT
 
       comment 'Deck Core and extensions'
-      script :type => "text/javascript", :src => public_asset('deck.js/core/deck.core.js')
+      script :type => 'text/javascript', :src => public_asset('deck.js/core/deck.core.js')
 
       extensions.each do |extension|
-        script :type => "text/javascript", :src => public_asset("deck.js/extensions/#{extension}/deck.#{extension}.js")
+        script :type => 'text/javascript', :src => public_asset("deck.js/extensions/#{extension}/deck.#{extension}.js")
       end
 
       # fire up deck.js
       script raw("$(function(){$.deck('.slide');});")
-
     end
 
     def body_attributes
-      {:class => "deck-container"}
+      { :class => 'deck-container' }
     end
 
     def body_content
@@ -112,8 +104,8 @@ module Deck
       scripts
     end
 
-    def slide slide_id
-      # todo: use Slide object, but without markdown
+    def slide(slide_id)
+      # TODO: use Slide object, but without markdown
       # slide = Slide.new(:slide_id => slide_id)
       section.slide :id => slide_id do
         yield
@@ -132,13 +124,13 @@ module Deck
 
     def default_slide
       slide 'readme' do
-        h2 "deck.rb"
-        ul {
-          li "based on deck.js"
-          li "create a subclass of Deck (see introduction.rb)"
-          li "run erector to build it"
-        }
-        pre "erector --to-html ./deck.rb  # generates deck.html"
+        h2 'deck.rb'
+        ul do
+          li 'based on deck.js'
+          li 'create a subclass of Deck (see introduction.rb)'
+          li 'run erector to build it'
+        end
+        pre 'erector --to-html ./deck.rb  # generates deck.html'
       end
     end
 
@@ -153,7 +145,7 @@ module Deck
 
     def toc
       div.slide_toc do
-        div.toggle "[contents]"
+        div.toggle '[contents]'
         div.table do
           h2 @title
           ul do
@@ -192,8 +184,7 @@ module Deck
     end
 
     def permalink
-      a "#", :href => '.', :title => 'Permalink to this slide', :class => 'deck-permalink'
+      a '#', :href => '.', :title => 'Permalink to this slide', :class => 'deck-permalink'
     end
-
   end
 end
