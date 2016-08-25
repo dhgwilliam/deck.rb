@@ -30,5 +30,5 @@ deck.js (http://imakewebthings.github.com/deck.js) is a JavaScript library for b
   s.add_dependency 'coderay'
   s.add_dependency 'json'
   s.add_dependency 'rack-codehighlighter'
-
+  s.add_dependency 'pdfkit'
 end
