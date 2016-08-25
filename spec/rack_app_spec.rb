@@ -62,7 +62,7 @@ module Deck
       it 'passes options' do
         slide_files = []
         options = { :style => 'foo' }
-        Deck::RackApp.should_receive(:new).with(slide_files, options).and_call_original
+        expect(Deck::RackApp).to receive(:new).with(slide_files, options).and_call_original
         Deck::RackApp.build slide_files, options
       end
     end
