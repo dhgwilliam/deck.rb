@@ -144,6 +144,10 @@ It also accepts options, e.g.
 
 Report bugs on <http://github.com/alexch/deck.rb/issues>
 
+## Contributing
+
+* To update the vendored version of `deck.js` use `rake upstream_deck`
+
 ## Credits
 
 * deck.js by Caleb at <http://imakewebthings.com>
@@ -193,7 +197,6 @@ Report bugs on <http://github.com/alexch/deck.rb/issues>
   * see showoff.rb:189
 * some way to build/rebuild a project that is deployable to heroku
 * PDF
-* rewrite internal links to files and serve them relative to current dir, not slide dir
 * custom `.css`, `.scss`, and `.js` files, which will get imported into all slides
 * support some more extensions https://github.com/imakewebthings/deck.js/wiki
 * improve table of contents
@@ -202,7 +205,6 @@ Report bugs on <http://github.com/alexch/deck.rb/issues>
   * close box
 * requests from Christopher Gandrud <http://christophergandrud.blogspot.com/2012/05/aspirational-useful-deckrb-with.html>
   * There really aren’t title slides.
-  * The slideshow opens as a locally hosted webserver, and the command to build a stand alone HTML presentation doesn’t seem to work that well (hence no example included with this post).
   * It only allows you to use the Swiss template.
   * I couldn’t figure out how to easily get MathJax support to display equations.
 
