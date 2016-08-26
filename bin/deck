@@ -9,6 +9,7 @@ require 'deck'
 require 'deck/rack_app'
 require 'deck/version'
 require 'thin' # i hate webrick
+require 'pdfkit'
 
 options = Trollop.options do
   version "deck v#{Deck::VERSION}"
@@ -16,7 +17,8 @@ options = Trollop.options do
   banner 'Usage: deck [options] [slides]'
   banner '(see http://github.com/alexch/deck.rb README for more help)'
   opt :port, 'Specify alternate port', :default => 4333
-  opt :build, 'Build an HTML file instead of launching a server (WARNING: not very useful yet)'
+  opt :build, 'Build an HTML file instead of launching a server'
+  opt :pdf, 'Build a PDF file instead of launching a server'
   opt :style, 'Specify the style theme from deck.js/themes/style/', default: 'swiss'
   opt :transition, 'Specify the transition theme from deck.js/themes/transition/', default: 'horizontal-slide'
 end
@@ -44,6 +46,29 @@ if options.delete(:build)
     dest = File.join(output_dir, File.basename(file))
     FileUtils.cp_r(src, dest)
   end
+elsif options.delete(:pdf)
+  abort 'please supply a path' if ARGV.empty?
+
+  arg = ARGV.first
+  output_dir = '.'
+
+  basename    = File.basename(arg, '.md')
+  slides      = Deck::Slide.from_file(arg)
+
+  opts = { slides: slides, relative_path: './public' }
+  deck = Deck::SlideDeck.new(opts) # TODO: pass theme options
+
+  kit = PDFKit.new(deck.to_pretty, page_size: 'Letter', orientation: 'Landscape')
+
+  public_dir = File.absolute_path(File.join(__FILE__, '..', '..', 'public'))
+  Dir.glob(public_dir) do |file|
+    src = file
+    dest = File.join(output_dir, File.basename(file))
+    kit.stylesheets << dest if File.extname(dest) == '.css'
+    FileUtils.cp_r(src, dest)
+  end
+
+  kit.to_file(File.join(output_dir, "#{basename}.pdf"))
 else
 
   port = options.delete(:port)
