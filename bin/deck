@@ -23,7 +23,7 @@ end
 
 if options.delete(:build)
   slides = []
-  output_path = nil
+  #output_path = nil
   output_dir = '.' # for now, since deck.js is relative to the project root
 
   ARGV.each do |arg|
@@ -34,7 +34,7 @@ if options.delete(:build)
   end
 
   File.open(output_path, 'w') do |file|
-    deck = Deck::SlideDeck.new :slides => slides # TODO: pass theme options
+    deck = Deck::SlideDeck.new(:slides => slides) # TODO: pass theme options
     # deck.to_pretty(:output => file)  # TODO: figure out why this doesn't work
     file.write deck.to_pretty
   end
