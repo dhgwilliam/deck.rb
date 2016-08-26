@@ -22,23 +22,28 @@ options = Trollop.options do
 end
 
 if options.delete(:build)
-  slides = []
-  output_path = nil
-  output_dir = '.' # for now, since deck.js is relative to the project root
+  abort 'please supply a path' if ARGV.empty?
 
-  ARGV.each do |arg|
-    # output_dir ||= File.dirname(arg)
-    basename ||= File.basename(arg, '.md')
-    output_path ||= "#{output_dir}/#{basename}.html"
-    slides += Deck::Slide.from_file arg
-  end
+  arg = ARGV.first
+  output_dir = '.'
+
+  basename    = File.basename(arg, '.md')
+  output_path = "#{output_dir}/#{basename}.html"
+  slides      = Deck::Slide.from_file(arg)
 
   File.open(output_path, 'w') do |file|
-    deck = Deck::SlideDeck.new :slides => slides # TODO: pass theme options
+    opts = { slides: slides, relative_path: './public' }
+    deck = Deck::SlideDeck.new(opts) # TODO: pass theme options
     # deck.to_pretty(:output => file)  # TODO: figure out why this doesn't work
     file.write deck.to_pretty
   end
 
+  public_dir = File.absolute_path(File.join(__FILE__, '..', '..', 'public'))
+  Dir.glob(public_dir) do |file|
+    src = file
+    dest = File.join(output_dir, File.basename(file))
+    FileUtils.cp_r(src, dest)
+  end
 else
 
   port = options.delete(:port)

@@ -1,6 +1,5 @@
 require 'erector'
 require 'redcarpet'
-
 require 'deck/slide'
 
 module Deck
@@ -10,7 +9,7 @@ module Deck
           :author => nil
     needs :extensions => %w(goto menu navigation status hash scale)
     needs :slides => nil
-
+    needs :relative_path => nil
     needs :style => 'swiss'
     needs :transition => 'horizontal-slide'
 
@@ -40,7 +39,7 @@ module Deck
     end
 
     def public_asset(path)
-      "/#{path}"
+      "#{@relative_path}/#{path}"
     end
 
     def head_content
